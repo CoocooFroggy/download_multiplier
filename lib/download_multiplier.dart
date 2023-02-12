@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:download_multiplier/objects/pre_data.dart';
 
-Future<void> superDownload(String url, int chunks) async {
-  final preData = await fetchPreData(url);
+Future<void> superDownload(List<String> urls, int chunks) async {
+  final preData = await fetchPreData(urls[0]);
 
   List<String> rangeHeaders = [];
   final chunkLength = preData.contentLength ~/ chunks;
@@ -22,8 +22,8 @@ Future<void> superDownload(String url, int chunks) async {
 
   List<Future<File>> futures = [];
   for (int i = 0; i < chunks; i++) {
-    futures.add(downloadChunk(url, preData, i, rangeHeaders));
-    // await Future.delayed(Duration(seconds: 5));
+    final url = urls[i];
+    futures.add(downloadChunk(url, preData, i, rangeHeaders[i]));
   }
   // Wait for them all to finish downloading
   final files = await Future.wait(futures);
@@ -34,16 +34,14 @@ Future<void> superDownload(String url, int chunks) async {
   print('Done!');
 }
 
-Future<File> downloadChunk(
-  String url,
-  PreData preData,
-  int currentChunk,
-  List<String> rangeHeaders,
-) async {
+Future<File> downloadChunk(String url,
+    PreData preData,
+    int currentChunk,
+    String rangeHeader,) async {
   final uri = Uri.parse(url);
   final request = await HttpClient().getUrl(uri);
 
-  request.headers.add('range', rangeHeaders[currentChunk]);
+  request.headers.add('range', rangeHeader);
 
   final response = await request.close();
 
